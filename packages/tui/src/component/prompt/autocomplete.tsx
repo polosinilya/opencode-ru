@@ -18,6 +18,7 @@ import { useTheme, selectedForeground } from "../../context/theme"
 import { SplitBorder } from "../../ui/border"
 import { useTerminalDimensions } from "@opentui/solid"
 import { Locale } from "../../util/locale"
+import { t } from "../../util/i18n"
 import type { PromptInfo } from "../../prompt/history"
 import { useFrecency } from "../../prompt/frecency"
 import { useBindings, useCommandSlashes, useOpencodeModeStack } from "../../keymap"
@@ -584,7 +585,7 @@ export function Autocomplete(props: {
     commands: [
       {
         name: "prompt.autocomplete.prev",
-        title: "Previous autocomplete item",
+        title: t("Previous autocomplete item"),
         category: "Autocomplete",
         run() {
           setStore("input", "keyboard")
@@ -593,7 +594,7 @@ export function Autocomplete(props: {
       },
       {
         name: "prompt.autocomplete.next",
-        title: "Next autocomplete item",
+        title: t("Next autocomplete item"),
         category: "Autocomplete",
         run() {
           setStore("input", "keyboard")
@@ -602,7 +603,7 @@ export function Autocomplete(props: {
       },
       {
         name: "prompt.autocomplete.hide",
-        title: "Hide autocomplete",
+        title: t("Hide autocomplete"),
         category: "Autocomplete",
         run() {
           hide()
@@ -610,7 +611,7 @@ export function Autocomplete(props: {
       },
       {
         name: "prompt.autocomplete.select",
-        title: "Select autocomplete item",
+        title: t("Select autocomplete item"),
         category: "Autocomplete",
         run() {
           select()
@@ -618,7 +619,7 @@ export function Autocomplete(props: {
       },
       {
         name: "prompt.autocomplete.complete",
-        title: "Complete autocomplete item",
+        title: t("Complete autocomplete item"),
         category: "Autocomplete",
         run() {
           const selected = options()[store.selected]

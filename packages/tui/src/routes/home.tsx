@@ -12,10 +12,11 @@ import { useEditorContext } from "../context/editor"
 import { useTerminalDimensions } from "@opentui/solid"
 import { useTuiConfig } from "../config"
 import { HomeSessionDestinationProvider } from "./home/session-destination"
+import { t } from "../util/i18n"
 
 let once = false
 const placeholder = {
-  normal: ["Fix a TODO in the codebase", "What is the tech stack of this project?", "Fix broken tests"],
+  normal: [t("Fix a TODO in the codebase"), t("What is the tech stack of this project?"), t("Fix broken tests")],
   shell: ["ls -la", "git status", "pwd"],
 }
 

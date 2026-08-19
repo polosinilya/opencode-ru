@@ -3,6 +3,7 @@ import { useDialog } from "../ui/dialog"
 import { useSync } from "../context/sync"
 import { createMemo } from "solid-js"
 import { useSDK } from "../context/sdk"
+import { t } from "../util/i18n"
 
 interface DialogSessionRenameProps {
   session: string
@@ -16,7 +17,7 @@ export function DialogSessionRename(props: DialogSessionRenameProps) {
 
   return (
     <DialogPrompt
-      title="Rename Session"
+      title={t("Rename Session")}
       value={session()?.title}
       onConfirm={(value) => {
         void sdk.client.session.update({
