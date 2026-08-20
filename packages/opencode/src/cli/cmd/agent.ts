@@ -10,6 +10,7 @@ import { EOL } from "os"
 import type { Argv } from "yargs"
 import { Effect } from "effect"
 import { effectCmd } from "../effect-cmd"
+import { t } from "../i18n"
 
 type AgentMode = "all" | "primary" | "subagent"
 
@@ -32,31 +33,33 @@ const AVAILABLE_PERMISSIONS = [
 
 const AgentCreateCommand = effectCmd({
   command: "create",
-  describe: "create a new agent",
+  describe: t("create a new agent"),
   builder: (yargs: Argv) =>
     yargs
       .option("path", {
         type: "string",
-        describe: "directory path to generate the agent file",
+        describe: t("directory path to generate the agent file"),
       })
       .option("description", {
         type: "string",
-        describe: "what the agent should do",
+        describe: t("what the agent should do"),
       })
       .option("mode", {
         type: "string",
-        describe: "agent mode",
+        describe: t("agent mode"),
         choices: ["all", "primary", "subagent"] as const,
       })
       .option("permissions", {
         type: "string",
         alias: ["tools"],
-        describe: `comma-separated list of permissions to allow (default: all). Available: "${AVAILABLE_PERMISSIONS.join(", ")}"`,
+        describe: t('comma-separated list of permissions to allow (default: all). Available: "{permissions}"', {
+          permissions: AVAILABLE_PERMISSIONS.join(", "),
+        }),
       })
       .option("model", {
         type: "string",
         alias: ["m"],
-        describe: "model to use in the format of provider/model",
+        describe: t("model to use in the format of provider/model"),
       }),
   handler: Effect.fn("Cli.agent.create")(function* (args) {
     const { InstanceRef } = yield* Effect.promise(() => import("@/effect/instance-ref"))
@@ -78,7 +81,7 @@ const AgentCreateCommand = effectCmd({
 
       if (!isFullyNonInteractive) {
         UI.empty()
-        prompts.intro("Create agent")
+        prompts.intro(t("Create agent"))
       }
 
       const project = ctx.project
@@ -91,15 +94,15 @@ const AgentCreateCommand = effectCmd({
         let scope: "global" | "project" = "global"
         if (project.vcs === "git") {
           const scopeResult = await prompts.select({
-            message: "Location",
+            message: t("Location"),
             options: [
               {
-                label: "Current project",
+                label: t("Current project"),
                 value: "project" as const,
                 hint: ctx.worktree,
               },
               {
-                label: "Global",
+                label: t("Global"),
                 value: "global" as const,
                 hint: Global.Path.config,
               },
@@ -117,9 +120,9 @@ const AgentCreateCommand = effectCmd({
         description = cliDescription
       } else {
         const query = await prompts.text({
-          message: "Description",
-          placeholder: "What should this agent do?",
-          validate: (x) => (x && x.length > 0 ? undefined : "Required"),
+          message: t("Description"),
+          placeholder: t("What should this agent do?"),
+          validate: (x) => (x && x.length > 0 ? undefined : t("Required")),
         })
         if (prompts.isCancel(query)) throw new UI.CancelledError()
         description = query
@@ -127,14 +130,14 @@ const AgentCreateCommand = effectCmd({
 
       // Generate agent
       const spinner = prompts.spinner()
-      spinner.start("Generating agent configuration...")
+      spinner.start(t("Generating agent configuration..."))
       const model = args.model ? Provider.parseModel(args.model) : undefined
       const generated = await runLocalEffect(agentSvc.generate({ description, model })).catch((error) => {
-        spinner.stop(`LLM failed to generate agent: ${error.message}`, 1)
+        spinner.stop(t("LLM failed to generate agent: {error}", { error: error.message }), 1)
         if (isFullyNonInteractive) process.exit(1)
         throw new UI.CancelledError()
       })
-      spinner.stop(`Agent ${generated.identifier} generated`)
+      spinner.stop(t("Agent {identifier} generated", { identifier: generated.identifier }))
 
       // Select permissions to allow
       let selected: string[]
@@ -142,7 +145,7 @@ const AgentCreateCommand = effectCmd({
         selected = perms ? perms.split(",").map((t) => t.trim()) : AVAILABLE_PERMISSIONS
       } else {
         const result = await prompts.multiselect({
-          message: "Select permissions to allow (Space to toggle)",
+          message: t("Select permissions to allow (Space to toggle)"),
           options: AVAILABLE_PERMISSIONS.map((permission) => ({
             label: permission,
             value: permission,
@@ -159,22 +162,22 @@ const AgentCreateCommand = effectCmd({
         mode = cliMode
       } else {
         const modeResult = await prompts.select({
-          message: "Agent mode",
+          message: t("Agent mode"),
           options: [
             {
-              label: "All",
+              label: t("All"),
               value: "all" as const,
-              hint: "Can function in both primary and subagent roles",
+              hint: t("Can function in both primary and subagent roles"),
             },
             {
-              label: "Primary",
+              label: t("Primary"),
               value: "primary" as const,
-              hint: "Acts as a primary/main agent",
+              hint: t("Acts as a primary/main agent"),
             },
             {
-              label: "Subagent",
+              label: t("Subagent"),
               value: "subagent" as const,
-              hint: "Can be used as a subagent by other agents",
+              hint: t("Can be used as a subagent by other agents"),
             },
           ],
           initialValue: "all" as const,
@@ -212,10 +215,10 @@ const AgentCreateCommand = effectCmd({
 
       if (await Filesystem.exists(filePath)) {
         if (isFullyNonInteractive) {
-          console.error(`Error: Agent file already exists: ${filePath}`)
+          console.error(t("Error: Agent file already exists: {path}", { path: filePath }))
           process.exit(1)
         }
-        prompts.log.error(`Agent file already exists: ${filePath}`)
+        prompts.log.error(t("Agent file already exists: {path}", { path: filePath }))
         throw new UI.CancelledError()
       }
 
@@ -224,8 +227,8 @@ const AgentCreateCommand = effectCmd({
       if (isFullyNonInteractive) {
         console.log(filePath)
       } else {
-        prompts.log.success(`Agent created: ${filePath}`)
-        prompts.outro("Done")
+        prompts.log.success(t("Agent created: {path}", { path: filePath }))
+        prompts.outro(t("Done"))
       }
     })
   }),
@@ -233,7 +236,7 @@ const AgentCreateCommand = effectCmd({
 
 const AgentListCommand = effectCmd({
   command: "list",
-  describe: "list all available agents",
+  describe: t("list all available agents"),
   handler: Effect.fn("Cli.agent.list")(function* () {
     const { Agent } = yield* Effect.promise(() => import("../../agent/agent"))
     const agents = yield* Agent.Service.use((svc) => svc.list())
@@ -253,7 +256,7 @@ const AgentListCommand = effectCmd({
 
 export const AgentCommand = cmd({
   command: "agent",
-  describe: "manage agents",
+  describe: t("manage agents"),
   builder: (yargs) => yargs.command(AgentCreateCommand).command(AgentListCommand).demandCommand(),
   async handler() {},
 })

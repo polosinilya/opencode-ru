@@ -4,30 +4,31 @@ import { ModelsDev } from "@opencode-ai/core/models-dev"
 import { effectCmd, fail } from "../effect-cmd"
 import { UI } from "../ui"
 import { ProviderV2 } from "@opencode-ai/core/provider"
+import { t } from "../i18n"
 
 export const ModelsCommand = effectCmd({
   command: "models [provider]",
-  describe: "list all available models",
+  describe: t("list all available models"),
   builder: (yargs) =>
     yargs
       .positional("provider", {
-        describe: "provider ID to filter models by",
+        describe: t("provider ID to filter models by"),
         type: "string",
         array: false,
       })
       .option("verbose", {
-        describe: "use more verbose model output (includes metadata like costs)",
+        describe: t("use more verbose model output (includes metadata like costs)"),
         type: "boolean",
       })
       .option("refresh", {
-        describe: "refresh the models cache from models.dev",
+        describe: t("refresh the models cache from models.dev"),
         type: "boolean",
       }),
   handler: Effect.fn("Cli.models")(function* (args) {
     const { Provider } = yield* Effect.promise(() => import("@/provider/provider"))
     if (args.refresh) {
       yield* ModelsDev.Service.use((s) => s.refresh(true))
-      UI.println(UI.Style.TEXT_SUCCESS_BOLD + "Models cache refreshed" + UI.Style.TEXT_NORMAL)
+      UI.println(UI.Style.TEXT_SUCCESS_BOLD + t("Models cache refreshed") + UI.Style.TEXT_NORMAL)
     }
 
     const provider = yield* Provider.Service
@@ -48,7 +49,7 @@ export const ModelsCommand = effectCmd({
 
     if (args.provider) {
       const providerID = ProviderV2.ID.make(args.provider)
-      if (!providers[providerID]) return yield* fail(`Provider not found: ${args.provider}`)
+      if (!providers[providerID]) return yield* fail(t("Provider not found: {provider}", { provider: args.provider }))
       print(providerID, args.verbose)
       return
     }

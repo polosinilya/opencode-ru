@@ -1,6 +1,7 @@
 import { NamedError } from "@opencode-ai/core/util/error"
 import { errorFormat } from "@/util/error"
 import { isRecord } from "@/util/record"
+import { t } from "./i18n"
 
 type ConfigIssue = { message: string; path: string[] }
 
@@ -47,7 +48,9 @@ export function FormatError(input: unknown): string | undefined {
   // MCPFailed: { name: string }
   if (NamedError.hasName(input, "MCPFailed")) {
     const data = isRecord(input) && isRecord(input.data) ? stringField(input.data, "name") : undefined
-    return `MCP server "${data}" failed. Note, opencode does not support MCP authentication yet.`
+    return t('MCP server "{name}" failed. Note, opencode does not support MCP authentication yet.', {
+      name: data,
+    })
   }
 
   // AccountServiceError, AccountTransportError: TaggedErrorClass
@@ -62,30 +65,41 @@ export function FormatError(input: unknown): string | undefined {
       ? providerModelNotFound.suggestions.filter((x) => typeof x === "string")
       : []
     return [
-      `Model not found: ${stringField(providerModelNotFound, "providerID")}/${stringField(providerModelNotFound, "modelID")}`,
-      ...(suggestions.length ? ["Did you mean: " + suggestions.join(", ")] : []),
-      `Try: \`opencode models\` to list available models`,
-      `Or check your config (opencode.json) provider/model names`,
+      t("Model not found: {model}", {
+        model: `${stringField(providerModelNotFound, "providerID")}/${stringField(providerModelNotFound, "modelID")}`,
+      }),
+      ...(suggestions.length ? [t("Did you mean: {suggestions}", { suggestions: suggestions.join(", ") })] : []),
+      t("Try: `opencode models` to list available models"),
+      t("Or check your config (opencode.json) provider/model names"),
     ].join("\n")
   }
 
   // ProviderInitError: { providerID: string }
   const providerInit = configData(input, "ProviderInitError")
   if (providerInit) {
-    return `Failed to initialize provider "${stringField(providerInit, "providerID")}". Check credentials and configuration.`
+    return t('Failed to initialize provider "{provider}". Check credentials and configuration.', {
+      provider: stringField(providerInit, "providerID"),
+    })
   }
 
   // ConfigJsonError: { path: string, message?: string }
   const configJson = configData(input, "ConfigJsonError")
   if (configJson) {
     const message = stringField(configJson, "message")
-    return `Config file at ${stringField(configJson, "path")} is not valid JSON(C)` + (message ? `: ${message}` : "")
+    return (
+      t("Config file at {path} is not valid JSON(C)", { path: stringField(configJson, "path") }) +
+      (message ? `: ${message}` : "")
+    )
   }
 
   // ConfigDirectoryTypoError: { dir: string, path: string, suggestion: string }
   const configDirectoryTypo = configData(input, "ConfigDirectoryTypoError")
   if (configDirectoryTypo) {
-    return `Directory "${stringField(configDirectoryTypo, "dir")}" in ${stringField(configDirectoryTypo, "path")} is not valid. Rename the directory to "${stringField(configDirectoryTypo, "suggestion")}" or remove it. This is a common typo.`
+    return t('Directory "{dir}" in {path} is not valid. Rename the directory to "{suggestion}" or remove it. This is a common typo.', {
+      dir: stringField(configDirectoryTypo, "dir"),
+      path: stringField(configDirectoryTypo, "path"),
+      suggestion: stringField(configDirectoryTypo, "suggestion"),
+    })
   }
 
   // ConfigFrontmatterError: { message: string }
@@ -100,9 +114,11 @@ export function FormatError(input: unknown): string | undefined {
     const url = stringField(remoteAuth, "url")
     const remote = stringField(remoteAuth, "remote")
     return [
-      `Failed to load remote config${remote ? ` from ${remote}` : ""}: the server returned a login page instead of JSON.`,
-      `Authentication is missing or has expired (the endpoint is likely behind an SSO or identity-aware proxy).`,
-      ...(url ? [`Run \`opencode auth login ${url}\` to re-authenticate.`] : []),
+      t("Failed to load remote config{remote}: the server returned a login page instead of JSON.", {
+        remote: remote ? ` from ${remote}` : "",
+      }),
+      t("Authentication is missing or has expired (the endpoint is likely behind an SSO or identity-aware proxy)."),
+      ...(url ? [t("Run `opencode auth login {url}` to re-authenticate.", { url })] : []),
     ].join("\n")
   }
 
@@ -113,7 +129,10 @@ export function FormatError(input: unknown): string | undefined {
     const message = stringField(configInvalid, "message")
     const issues = configIssues(configInvalid)
     return [
-      `Configuration is invalid${path && path !== "config" ? ` at ${path}` : ""}` + (message ? `: ${message}` : ""),
+      t("Configuration is invalid{where}{message}", {
+        where: path && path !== "config" ? ` at ${path}` : "",
+        message: message ? `: ${message}` : "",
+      }),
       ...issues.map((issue) => "↳ " + issue.message + " " + issue.path.join(".")),
     ].join("\n")
   }

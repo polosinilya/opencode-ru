@@ -11,6 +11,7 @@ import { Process } from "@/util/process"
 import { UI } from "../ui"
 import { effectCmd } from "../effect-cmd"
 import { InstanceRef } from "@/effect/instance-ref"
+import { t } from "../i18n"
 
 type Spin = {
   start: (msg: string) => void
@@ -178,35 +179,35 @@ export function createPlugTask(input: PlugInput, dep: PlugDeps = defaultPlugDeps
 export const PluginCommand = effectCmd({
   command: "plugin <module>",
   aliases: ["plug"],
-  describe: "install plugin and update config",
+  describe: t("install plugin and update config"),
   builder: (yargs) =>
     yargs
       .positional("module", {
         type: "string",
-        describe: "npm module name",
+        describe: t("npm module name"),
       })
       .option("global", {
         alias: ["g"],
         type: "boolean",
         default: false,
-        describe: "install in global config",
+        describe: t("install in global config"),
       })
       .option("force", {
         alias: ["f"],
         type: "boolean",
         default: false,
-        describe: "replace existing plugin version",
+        describe: t("replace existing plugin version"),
       }),
   handler: Effect.fn("Cli.plug")(function* (args) {
     const mod = String(args.module ?? "").trim()
     if (!mod) {
-      UI.error("module is required")
+      UI.error(t("module is required"))
       process.exitCode = 1
       return
     }
 
     UI.empty()
-    intro(`Install plugin ${mod}`)
+    intro(t("Install plugin {module}", { module: mod }))
 
     const run = createPlugTask({
       mod,
@@ -224,7 +225,7 @@ export const PluginCommand = effectCmd({
       }),
     )
 
-    outro("Done")
+    outro(t("Done"))
     if (!ok) process.exitCode = 1
   }),
 })

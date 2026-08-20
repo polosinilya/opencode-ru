@@ -1,6 +1,7 @@
 import { EOL } from "os"
 import { Schema } from "effect"
 import { logo as glyphs } from "./logo"
+import { t } from "./i18n"
 
 const wordmark = [
   `⠀                                ▄     `,
@@ -122,7 +123,7 @@ export function error(message: string) {
   if (message.startsWith("Error: ")) {
     message = message.slice("Error: ".length)
   }
-  println(Style.TEXT_DANGER_BOLD + "Error: " + Style.TEXT_NORMAL + message)
+  println(Style.TEXT_DANGER_BOLD + t("Error: ") + Style.TEXT_NORMAL + message)
 }
 
 export function markdown(text: string): string {

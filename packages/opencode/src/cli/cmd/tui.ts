@@ -14,6 +14,7 @@ import { writeHeapSnapshot } from "v8"
 import { ServerAuth } from "@/server/auth"
 import { validateSession } from "../tui/validate-session"
 import { win32InstallCtrlCGuard } from "@opencode-ai/tui/terminal-win32"
+import { t } from "../i18n"
 
 declare global {
   const OPENCODE_WORKER_PATH: string
@@ -71,43 +72,43 @@ export function resolveThreadDirectory(project?: string, envPWD = process.env.PW
 
 export const TuiThreadCommand = cmd({
   command: "$0 [project]",
-  describe: "start opencode tui",
+  describe: t("start opencode tui"),
   builder: (yargs) =>
     withNetworkOptions(yargs)
       .positional("project", {
         type: "string",
-        describe: "path to start opencode in",
+        describe: t("path to start opencode in"),
       })
       .option("model", {
         type: "string",
         alias: ["m"],
-        describe: "model to use in the format of provider/model",
+        describe: t("model to use in the format of provider/model"),
       })
       .option("continue", {
         alias: ["c"],
-        describe: "continue the last session",
+        describe: t("continue the last session"),
         type: "boolean",
       })
       .option("session", {
         alias: ["s"],
         type: "string",
-        describe: "session id to continue",
+        describe: t("session id to continue"),
       })
       .option("fork", {
         type: "boolean",
-        describe: "fork the session when continuing (use with --continue or --session)",
+        describe: t("fork the session when continuing (use with --continue or --session)"),
       })
       .option("prompt", {
         type: "string",
-        describe: "prompt to use",
+        describe: t("prompt to use"),
       })
       .option("agent", {
         type: "string",
-        describe: "agent to use",
+        describe: t("agent to use"),
       })
       .option("auto", {
         type: "boolean",
-        describe: "auto-approve permissions that are not explicitly denied (dangerous!)",
+        describe: t("auto-approve permissions that are not explicitly denied (dangerous!)"),
         default: false,
       })
       .option("yolo", {
@@ -122,7 +123,7 @@ export const TuiThreadCommand = cmd({
       })
       .option("mini", {
         type: "boolean",
-        describe: "start the minimal interactive interface",
+        describe: t("start the minimal interactive interface"),
         default: false,
       })
       .option("replay", {
@@ -131,11 +132,11 @@ export const TuiThreadCommand = cmd({
       })
       .option("no-replay", {
         type: "boolean",
-        describe: "disable mini session history replay on resume and after resize",
+        describe: t("disable mini session history replay on resume and after resize"),
       })
       .option("replay-limit", {
         type: "number",
-        describe: "cap visible mini replay to the newest N messages",
+        describe: t("cap visible mini replay to the newest N messages"),
       })
       .option("demo", {
         type: "boolean",
@@ -143,7 +144,7 @@ export const TuiThreadCommand = cmd({
       }),
   handler: async (args) => {
     if (args.replay === true) {
-      UI.error("--replay is not supported; replay is enabled by default")
+      UI.error(t("--replay is not supported; replay is enabled by default"))
       process.exitCode = 1
       return
     }
@@ -154,7 +155,7 @@ export const TuiThreadCommand = cmd({
         process.argv.some((arg) => arg === option || arg.startsWith(option + "=")),
       )
       if (network) {
-        UI.error(`${network} cannot be used with --mini`)
+        UI.error(t("{flag} cannot be used with --mini", { flag: network }))
         process.exitCode = 1
         return
       }
@@ -181,7 +182,7 @@ export const TuiThreadCommand = cmd({
       ["--demo", args.demo !== undefined],
     ].find((entry) => entry[1])?.[0]
     if (unsupported) {
-      UI.error(`${unsupported} requires --mini`)
+      UI.error(t("{flag} requires --mini", { flag: String(unsupported) }))
       process.exitCode = 1
       return
     }
@@ -190,7 +191,7 @@ export const TuiThreadCommand = cmd({
     try {
       const { TuiConfig } = await import("@/config/tui")
       if (args.fork && !args.continue && !args.session) {
-        UI.error("--fork requires --continue or --session")
+        UI.error(t("--fork requires --continue or --session"))
         process.exitCode = 1
         return
       }
@@ -202,7 +203,7 @@ export const TuiThreadCommand = cmd({
       try {
         process.chdir(next)
       } catch {
-        UI.error("Failed to change directory to " + next)
+        UI.error(t("Failed to change directory to {dir}", { dir: next }))
         return
       }
       const cwd = Filesystem.resolve(process.cwd())

@@ -12,6 +12,7 @@ import path from "path"
 import { FSUtil } from "@opencode-ai/core/fs-util"
 import { Effect, Schema } from "effect"
 import type { InstanceContext } from "@/project/instance-context"
+import { t } from "../i18n"
 
 const decodeMessageInfo = Schema.decodeUnknownSync(SessionV1.Info)
 const decodePart = Schema.decodeUnknownSync(SessionV1.Part)
@@ -40,13 +41,13 @@ export function shouldAttachShareAuthHeaders(shareUrl: string, accountBaseUrl: s
 
 export function formatImportFileError(file: string, error: FSUtil.Error) {
   if (error._tag === "PlatformError") {
-    if (error.reason._tag === "NotFound") return `File not found: ${file}`
-    if (error.reason._tag === "PermissionDenied") return `Failed to read file: Permission denied`
-    return `Failed to read file: ${error.message}`
+    if (error.reason._tag === "NotFound") return t("File not found: {file}", { file })
+    if (error.reason._tag === "PermissionDenied") return t("Failed to read file: Permission denied")
+    return t("Failed to read file: {message}", { message: error.message })
   }
 
   const detail = error.cause instanceof Error ? error.cause.message : error.message
-  return `Invalid JSON in ${file}: ${detail}`
+  return t("Invalid JSON in {file}: {detail}", { file, detail })
 }
 
 /**
@@ -93,10 +94,10 @@ type ExportData = { info: SDKSession; messages: Array<{ info: Message; parts: Pa
 
 export const ImportCommand = effectCmd({
   command: "import <file>",
-  describe: "import session data from JSON file or URL",
+  describe: t("import session data from JSON file or URL"),
   builder: (yargs) =>
     yargs.positional("file", {
-      describe: "path to JSON file or share URL",
+      describe: t("path to JSON file or share URL"),
       type: "string",
       demandOption: true,
     }),
@@ -120,7 +121,7 @@ const runImport = Effect.fn("Cli.import.body")(function* (file: string, ctx: Ins
     const slug = parseShareUrl(file)
     if (!slug) {
       const baseUrl = yield* Effect.orDie(share.url())
-      process.stdout.write(`Invalid URL format. Expected: ${baseUrl}/share/<slug>`)
+      process.stdout.write(t("Invalid URL format. Expected: {baseUrl}/share/<slug>", { baseUrl }))
       process.stdout.write(EOL)
       return
     }
@@ -134,7 +135,9 @@ const runImport = Effect.fn("Cli.import.body")(function* (file: string, ctx: Ins
         try: () => fetch(url, { headers }),
         catch: (e) =>
           new CliError({
-            message: `Failed to fetch share data: ${e instanceof Error ? e.message : String(e)}`,
+            message: t("Failed to fetch share data: {error}", {
+              error: e instanceof Error ? e.message : String(e),
+            }),
           }),
       })
 
@@ -146,19 +149,19 @@ const runImport = Effect.fn("Cli.import.body")(function* (file: string, ctx: Ins
     }
 
     if (!response.ok) {
-      process.stdout.write(`Failed to fetch share data: ${response.statusText}`)
+      process.stdout.write(t("Failed to fetch share data: {error}", { error: response.statusText }))
       process.stdout.write(EOL)
       return
     }
 
     const shareData = yield* Effect.tryPromise({
       try: () => response.json() as Promise<ShareData[]>,
-      catch: () => new CliError({ message: "Share data was not valid JSON" }),
+      catch: () => new CliError({ message: t("Share data was not valid JSON") }),
     })
     const transformed = transformShareData(shareData)
 
     if (!transformed) {
-      process.stdout.write(`Share not found or empty: ${slug}`)
+      process.stdout.write(t("Share not found or empty: {slug}", { slug }))
       process.stdout.write(EOL)
       return
     }
@@ -171,7 +174,7 @@ const runImport = Effect.fn("Cli.import.body")(function* (file: string, ctx: Ins
   }
 
   if (!exportData) {
-    process.stdout.write(`Failed to read session data`)
+    process.stdout.write(t("Failed to read session data"))
     process.stdout.write(EOL)
     return
   }
@@ -225,6 +228,6 @@ const runImport = Effect.fn("Cli.import.body")(function* (file: string, ctx: Ins
     }
   }
 
-  process.stdout.write(`Imported session: ${exportData.info.id}`)
+  process.stdout.write(t("Imported session: {id}", { id: exportData.info.id }))
   process.stdout.write(EOL)
 })
