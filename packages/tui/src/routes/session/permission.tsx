@@ -489,10 +489,10 @@ function RejectPrompt(props: { onConfirm: (message: string) => void; onCancel: (
       <box gap={1} paddingLeft={1} paddingRight={3} paddingTop={1} paddingBottom={1}>
         <box flexDirection="row" gap={1} paddingLeft={1}>
           <text fg={theme.error}>{"△"}</text>
-          <text fg={theme.text}>Reject permission</text>
+          <text fg={theme.text}>{t("Reject permission")}</text>
         </box>
         <box paddingLeft={1}>
-          <text fg={theme.textMuted}>Tell OpenCode what to do differently</text>
+          <text fg={theme.textMuted}>{t("Tell OpenCode what to do differently")}</text>
         </box>
       </box>
       <box
@@ -556,7 +556,7 @@ function Prompt<const T extends Record<string, string>>(props: {
     commands: [
       {
         name: "app.exit",
-        title: "Reject permission",
+        title: t("Reject permission"),
         category: "Permission",
         run() {
           if (!props.escapeKey) return
@@ -624,7 +624,7 @@ function Prompt<const T extends Record<string, string>>(props: {
         ? [
             {
               key: "escape",
-              desc: "Reject permission",
+              desc: t("Reject permission"),
               group: "Permission",
               cmd: () => props.onSelect(props.escapeKey!),
             },

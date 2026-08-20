@@ -1182,6 +1182,25 @@ const ru: Record<string, Entry> = {
   "used": "использовано",
   "spent": "потрачено",
   "of": "из",
+  "Run a command... \"{hint}\"": "Выполнить команду... \"{hint}\"",
+  "Ask anything... \"{hint}\"": "Спросите что угодно... \"{hint}\"",
+  "Show keyboard shortcuts with": "Показать горячие клавиши:",
+  "agents": "агенты",
+  "commands": "команды",
+  "exit shell mode": "выход из режима оболочки",
+  "No files": "Нет файлов",
+  "No matching items": "Нет совпадений",
+  "disabled": "отключён",
+  "active": "активен",
+  "inactive": "неактивен",
+  "Installing plugin...": "Установка плагина...",
+  "scope:": "область:",
+  "(tab toggle)": "(переключение tab)",
+  "Reject permission": "Отклонить разрешение",
+  "Tell OpenCode what to do differently": "Расскажите OpenCode, что сделать иначе",
+  "Creating {type}": "Создание {type}",
+  "Workspace": "Рабочая область",
+  "(new {type})": "(новая {type})",
 }
 
 // --- language detection ---
@@ -1197,7 +1216,7 @@ function detectLanguage(): string {
   )
 }
 
-const currentLanguage = detectLanguage().toLowerCase()
+let currentLanguage = detectLanguage().toLowerCase()
 
 export function isRussian(): boolean {
   return currentLanguage.startsWith("ru")
@@ -1205,6 +1224,11 @@ export function isRussian(): boolean {
 
 export function getLanguage(): string {
   return currentLanguage
+}
+
+/** Force the active language at runtime, e.g. for tests. */
+export function setLanguage(lang: string): void {
+  currentLanguage = lang.toLowerCase()
 }
 
 // --- pluralization ---

@@ -176,7 +176,8 @@ function HomeHint(props: { api: TuiPluginApi }) {
   return (
     <box width="100%" maxWidth={75} alignItems="center" paddingTop={1} flexShrink={0}>
       <text fg={look().muted} wrapMode="none">
-        Show keyboard shortcuts with <span style={{ fg: look().subtle }}>{trigger() || command.toggle}</span>
+        {t("Show keyboard shortcuts with")}{" "}
+        <span style={{ fg: look().subtle }}>{trigger() || command.toggle}</span>
       </text>
     </box>
   )

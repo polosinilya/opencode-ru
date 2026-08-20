@@ -5,17 +5,18 @@ import { fileURLToPath } from "url"
 import { DialogSelect, type DialogSelectOption } from "../../ui/dialog-select"
 import { Show, createEffect, createMemo, createSignal } from "solid-js"
 import { useBindings } from "../../keymap"
+import { t } from "../../util/i18n"
 
 const id = "internal:plugin-manager"
 
 function state(api: TuiPluginApi, item: TuiPluginStatus) {
   if (!item.enabled) {
-    return <span style={{ fg: api.theme.current.textMuted }}>disabled</span>
+    return <span style={{ fg: api.theme.current.textMuted }}>{t("disabled")}</span>
   }
 
   return (
     <span style={{ fg: item.active ? api.theme.current.success : api.theme.current.error }}>
-      {item.active ? "active" : "inactive"}
+      {t(item.active ? "active" : "inactive")}
     </span>
   )
 }
@@ -49,15 +50,15 @@ function Install(props: { api: TuiPluginApi }) {
       title="Install plugin"
       placeholder="npm package name"
       busy={busy()}
-      busyText="Installing plugin..."
+      busyText={t("Installing plugin...")}
       description={() => (
         <box flexDirection="row" gap={1}>
-          <text fg={props.api.theme.current.textMuted}>scope:</text>
+          <text fg={props.api.theme.current.textMuted}>{t("scope:")}</text>
           <text fg={busy() ? props.api.theme.current.textMuted : props.api.theme.current.text}>
             {global() ? "global" : "local"}
           </text>
           <Show when={!busy()}>
-            <text fg={props.api.theme.current.textMuted}>(tab toggle)</text>
+            <text fg={props.api.theme.current.textMuted}>{t("(tab toggle)")}</text>
           </Show>
         </box>
       )}

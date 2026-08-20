@@ -1314,10 +1314,10 @@ export function Prompt(props: PromptProps) {
     if (store.mode === "shell") {
       if (!shell().length) return undefined
       const example = shell()[store.placeholder % shell().length]
-      return `Run a command... "${example}"`
+      return t('Run a command... "{hint}"', { hint: example })
     }
     if (!list().length) return undefined
-    return `Ask anything... "${list()[store.placeholder % list().length]}"`
+    return t('Ask anything... "{hint}"', { hint: list()[store.placeholder % list().length] })
   })
 
   const spinnerDef = createMemo(() => {
@@ -1611,16 +1611,16 @@ export function Prompt(props: PromptProps) {
                       const item = label()
                       if (item.type === "new") {
                         if (workspace.creating())
-                          return `Creating ${item.workspaceType}${".".repeat(workspace.creatingDots())}`
+                          return `${t("Creating {type}", { type: item.workspaceType })}${".".repeat(workspace.creatingDots())}`
                         return (
                           <>
-                            Workspace <span style={{ fg: theme.textMuted }}>(new {item.workspaceType})</span>
+                            {t("Workspace")} <span style={{ fg: theme.textMuted }}>{t("(new {type})", { type: item.workspaceType })}</span>
                           </>
                         )
                       }
                       return (
                         <>
-                          Workspace <span style={{ fg: theme.textMuted }}>{item.workspaceName}</span>
+                          {t("Workspace")} <span style={{ fg: theme.textMuted }}>{item.workspaceName}</span>
                         </>
                       )
                     })()}
@@ -1672,17 +1672,17 @@ export function Prompt(props: PromptProps) {
                     </Match>
                     <Match when={true}>
                       <text fg={theme.text}>
-                        {agentShortcut()} <span style={{ fg: theme.textMuted }}>agents</span>
+                        {agentShortcut()} <span style={{ fg: theme.textMuted }}>{t("agents")}</span>
                       </text>
                     </Match>
                   </Switch>
                   <text fg={theme.text}>
-                    {paletteShortcut()} <span style={{ fg: theme.textMuted }}>commands</span>
+                    {paletteShortcut()} <span style={{ fg: theme.textMuted }}>{t("commands")}</span>
                   </text>
                 </Match>
                 <Match when={store.mode === "shell"}>
                   <text fg={theme.text}>
-                    esc <span style={{ fg: theme.textMuted }}>exit shell mode</span>
+                    esc <span style={{ fg: theme.textMuted }}>{t("exit shell mode")}</span>
                   </text>
                 </Match>
               </Switch>
