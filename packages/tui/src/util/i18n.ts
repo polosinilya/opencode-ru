@@ -892,6 +892,10 @@ const ru: Record<string, Entry> = {
   "Task": "Задача",
   "Skill": "Навык",
   "Skills": "Навыки",
+  // --- server command descriptions (from the Command API) ---
+  "guided AGENTS.md setup": "пошаговая настройка AGENTS.md",
+  "review changes [commit|branch|pr], defaults to uncommitted":
+    "ревью изменений [commit|branch|pr], по умолчанию — незакоммиченные",
   "Parent": "Родительская",
   "Subagent": "Субагент",
   "Terminal": "Терминал",

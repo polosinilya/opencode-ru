@@ -514,7 +514,7 @@ export function Prompt(props: PromptProps) {
         },
       },
       {
-        title: "Skills",
+        title: t("Skills"),
         name: "prompt.skills",
         category: "Prompt",
         slashName: "skills",
