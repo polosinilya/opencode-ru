@@ -16,6 +16,7 @@
  */
 
 import { ru as coreRu } from "./i18n-ru/core"
+import { ru as commandRu } from "./i18n-ru/command"
 import { ru as modelsRu } from "./i18n-ru/models"
 import { ru as integrationsRu } from "./i18n-ru/integrations"
 import { ru as mcpRu } from "./i18n-ru/mcp"
@@ -28,6 +29,7 @@ export type Entry = string | ((params?: I18nParams) => string)
 
 const ru: Record<string, Entry> = {
   ...coreRu,
+  ...commandRu,
   ...modelsRu,
   ...integrationsRu,
   ...mcpRu,

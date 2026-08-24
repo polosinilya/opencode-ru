@@ -10,6 +10,7 @@ import { Skill } from "../skill"
 import PROMPT_INITIALIZE from "./template/initialize.txt"
 import PROMPT_REVIEW from "./template/review.txt"
 import { LegacyEvent } from "@opencode-ai/schema/legacy-event"
+import { t } from "../cli/i18n"
 
 type State = {
   commands: Record<string, Info>
@@ -69,7 +70,7 @@ const layer = Layer.effect(
 
       commands[Default.INIT] = {
         name: Default.INIT,
-        description: "guided AGENTS.md setup",
+        description: t("guided AGENTS.md setup"),
         source: "command",
         get template() {
           return PROMPT_INITIALIZE.replace("${path}", ctx.worktree)
@@ -78,7 +79,7 @@ const layer = Layer.effect(
       }
       commands[Default.REVIEW] = {
         name: Default.REVIEW,
-        description: "review changes [commit|branch|pr], defaults to uncommitted",
+        description: t("review changes [commit|branch|pr], defaults to uncommitted"),
         source: "command",
         get template() {
           return PROMPT_REVIEW.replace("${path}", ctx.worktree)
