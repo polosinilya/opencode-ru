@@ -444,6 +444,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
     let session: { id: SessionID; title: string; version: string }
     let shareId: string | undefined
     let exitCode = 0
+    let githubClientReady = false
     type PromptFiles = Awaited<ReturnType<typeof getUserPrompt>>["promptFiles"]
     const triggerCommentId = isCommentEvent
       ? (payload as IssueCommentEvent | PullRequestReviewCommentEvent).comment.id
@@ -492,6 +493,7 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
       octoGraph = graphql.defaults({
         headers: { authorization: `token ${appToken}` },
       })
+      githubClientReady = true
 
       const { userPrompt, promptFiles } = await getUserPrompt()
       if (!useGithubToken) {
@@ -646,9 +648,13 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
       } else if (e instanceof Error) {
         msg = e.message
       }
-      if (isUserEvent) {
-        await createComment(`${msg}${footer()}`)
-        await removeReaction(commentType)
+      if (isUserEvent && githubClientReady) {
+        try {
+          await createComment(`${msg}${footer()}`)
+          await removeReaction(commentType)
+        } catch (error) {
+          console.error("Failed to report error on GitHub:", error)
+        }
       }
       core.setFailed(msg)
       // Also output the clean error message for the action to capture
@@ -1011,12 +1017,11 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
           })
 
       if (!response.ok) {
-        const responseJson = (await response.json()) as { error?: string }
         throw new Error(
           t("App token exchange failed: {status} {statusText} - {error}", {
             status: response.status,
             statusText: response.statusText,
-            error: responseJson.error,
+            error: await response.text(),
           }),
         )
       }
