@@ -70,6 +70,9 @@ export const Info = Schema.Struct({
   scroll_speed: Schema.optional(ScrollSpeed).annotate({ description: "TUI scroll speed" }),
   scroll_acceleration: Schema.optional(ScrollAcceleration),
   diff_style: Schema.optional(DiffStyle),
+  layout_check_on_submit: Schema.optional(Schema.Boolean).annotate({
+    description: "Check the prompt for a wrong keyboard layout before sending and ask for confirmation",
+  }),
   cursor: Schema.optional(Cursor),
   mouse: Schema.optional(Schema.Boolean).annotate({ description: "Enable or disable mouse capture (default: true)" }),
 })

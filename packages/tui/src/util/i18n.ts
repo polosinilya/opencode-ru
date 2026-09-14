@@ -1205,6 +1205,13 @@ const ru: Record<string, Entry> = {
   "Creating {type}": "Создание {type}",
   "Workspace": "Рабочая область",
   "(new {type})": "(новая {type})",
+  "Fix keyboard layout of last word": "Исправить раскладку последнего слова",
+  "Nothing to fix": "Нечего исправлять",
+  "Layout fixed: {text}": "Раскладка исправлена: {text}",
+  "Wrong keyboard layout?": "Неверная раскладка?",
+  "Found {count} words in the wrong layout:": "Найдено слов в неверной раскладке: {count}",
+  "Send corrected": "Отправить исправленное",
+  "Send as is": "Отправить как есть",
 }
 
 // --- language detection ---

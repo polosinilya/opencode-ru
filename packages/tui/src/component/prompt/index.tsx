@@ -41,6 +41,8 @@ import type { AssistantMessage, FilePart, UserMessage } from "@opencode-ai/sdk/v
 import { Locale } from "../../util/locale"
 import { errorMessage } from "../../util/error"
 import { t } from "../../util/i18n"
+import { convertText, fixLastWord } from "../../util/keyboard-layout"
+import { confirmLayout } from "../../util/layout-check"
 import { formatDuration } from "../../util/format"
 import { createColors, createFrames } from "../../ui/spinner"
 import { useDialog } from "../../ui/dialog"
@@ -928,6 +930,60 @@ export function Prompt(props: PromptProps) {
     }
   })
 
+  useBindings(() => {
+    return {
+      target: inputTarget,
+      enabled: (() => {
+        cursorVersion()
+        return inputTarget() !== undefined && !props.disabled && !auto()?.visible && input !== undefined
+      })(),
+      commands: [
+        {
+          name: "input.fix.layout",
+          title: t("Fix keyboard layout of last word"),
+          category: "Prompt",
+          run() {
+            const selection = input.getSelection()
+            if (selection && selection.end > selection.start) {
+              const selected = input.getTextRange(selection.start, selection.end)
+              const replacement = convertText(selected)
+              if (replacement === selected) {
+                toast.show({ message: t("Nothing to fix"), variant: "warning" })
+                return
+              }
+              input.setSelection(selection.start, selection.end)
+              input.deleteSelection()
+              input.cursorOffset = selection.start
+              input.insertText(replacement)
+              setStore("prompt", "input", input.plainText)
+              input.getLayoutNode().markDirty()
+              renderer.requestRender()
+              toast.show({ message: t("Layout fixed: {text}", { text: replacement }), variant: "success" })
+              return
+            }
+            const fix = fixLastWord(input.plainText, input.cursorOffset)
+            if (!fix) {
+              toast.show({ message: t("Nothing to fix"), variant: "warning" })
+              return
+            }
+            input.setSelection(fix.start, fix.end)
+            input.deleteSelection()
+            input.cursorOffset = fix.start
+            input.insertText(fix.replacement)
+            setStore("prompt", "input", input.plainText)
+            input.getLayoutNode().markDirty()
+            renderer.requestRender()
+            toast.show({
+              message: t("Layout fixed: {text}", { text: fix.replacement }),
+              variant: "success",
+            })
+          },
+        },
+      ],
+      bindings: tuiConfig.keybinds.get("input.fix.layout"),
+    }
+  })
+
   let submitting = false
   async function submit() {
     // Prevent overlapping invocations (e.g. a double-pressed Enter, or the
@@ -959,6 +1015,15 @@ export function Prompt(props: PromptProps) {
     if (workspace.creating() || move.creating()) return false
     if (auto()?.visible) return false
     if (!store.prompt.input) return false
+    if (tuiConfig.layout_check_on_submit) {
+      const confirmed = await confirmLayout(dialog, store.prompt.input)
+      if (confirmed === undefined) return false
+      if (confirmed !== store.prompt.input) {
+        input.setText(confirmed)
+        setStore("prompt", "input", confirmed)
+        syncExtmarksWithPromptParts()
+      }
+    }
     const agent = local.agent.current()
     if (!agent) return false
     const trimmed = store.prompt.input.trim()

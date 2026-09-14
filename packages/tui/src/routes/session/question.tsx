@@ -8,7 +8,9 @@ import { useSDK } from "../../context/sdk"
 import { SplitBorder } from "../../ui/border"
 import { useTuiConfig } from "../../config"
 import { useBindings, useOpencodeModeStack } from "../../keymap"
+import { useDialog } from "../../ui/dialog"
 import { t } from "../../util/i18n"
+import { confirmLayout } from "../../util/layout-check"
 
 const QUESTION_MODE = "question"
 
@@ -18,6 +20,7 @@ export function QuestionPrompt(props: { request: QuestionRequest; directory?: st
   const renderer = useRenderer()
   const tuiConfig = useTuiConfig()
   const modeStack = useOpencodeModeStack()
+  const dialog = useDialog()
 
   const questions = createMemo(() => props.request.questions)
   const single = createMemo(() => questions().length === 1 && questions()[0]?.multiple !== true)
@@ -163,8 +166,8 @@ export function QuestionPrompt(props: { request: QuestionRequest; directory?: st
         key: "return",
         desc: t("Submit answer edit"),
         group: t("Question"),
-        cmd: () => {
-          const text = textarea?.plainText?.trim() ?? ""
+        cmd: async () => {
+          let text = textarea?.plainText?.trim() ?? ""
           const prev = store.custom[store.tab]
 
           if (!text) {
@@ -179,6 +182,12 @@ export function QuestionPrompt(props: { request: QuestionRequest; directory?: st
             }
             setStore("editing", false)
             return
+          }
+
+          if (tuiConfig.layout_check_on_submit) {
+            const confirmed = await confirmLayout(dialog, text)
+            if (confirmed === undefined) return
+            text = confirmed
           }
 
           if (multi()) {
