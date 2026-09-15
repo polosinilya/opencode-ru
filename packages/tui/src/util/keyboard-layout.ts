@@ -53,8 +53,8 @@ const CYR_TO_LAT: Record<string, string> = Object.fromEntries(
 
 const LATIN = /[a-z]/i
 const CYRILLIC = /[а-яё]/i
-const WORD = /[a-zа-яё]+(?:[\[\];',.\/`][a-zа-яё]+)*/gi
-const LAST_WORD = /[a-zа-яё]+(?:[\[\];',.\/`][a-zа-яё]+)*$/i
+const WORD = /[\[\];',.\/`]?[a-zа-яё]+(?:[\[\];',.\/`][a-zа-яё]+)*[\[\]]?/gi
+const LAST_WORD = /[\[\];',.\/`]?[a-zа-яё]+(?:[\[\];',.\/`][a-zа-яё]+)*[\[\]]?$/i
 
 function mapChar(char: string, map: Record<string, string>) {
   const mapped = map[char.toLowerCase()]
@@ -139,7 +139,8 @@ export function findLayoutIssues(text: string): LayoutIssues | undefined {
     const hasCyrillic = CYRILLIC.test(word)
     if (hasLatin === hasCyrillic) return word
     if (hasLatin) {
-      const known = word.length <= 2 ? COMMON_SHORT.has(word.toLowerCase()) : isKnownWord(word)
+      const letters = word.replace(/[^a-z]/gi, "").toLowerCase()
+      const known = letters.length <= 2 ? COMMON_SHORT.has(letters) : isKnownWord(word)
       if (known) return word
       const fixed = convertWord(word)
       if (fixed === word) return word

@@ -59,6 +59,14 @@ describe("util.layout", () => {
     expect(findLayoutIssues("Ghbdtn, rfr ltkf?")?.corrected).toBe("Привет, как дела?")
   })
 
+  test("findLayoutIssues converts words with mapped punctuation at boundaries", () => {
+    expect(findLayoutIssues("[jhjij")?.corrected).toBe("хорошо")
+    expect(findLayoutIssues("Ghbdtn]")?.corrected).toBe("Приветъ")
+    expect(findLayoutIssues(";bpym")?.corrected).toBe("жизнь")
+    expect(findLayoutIssues("'nj")?.corrected).toBe("это")
+    expect(findLayoutIssues(",snm")?.corrected).toBe("быть")
+  })
+
   test("findLayoutIssues returns undefined when nothing changes", () => {
     expect(findLayoutIssues("")).toBeUndefined()
   })
