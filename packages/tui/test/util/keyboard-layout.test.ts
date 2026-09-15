@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { convertText, convertWord, findLayoutIssues, fixLastWord } from "../../src/util/keyboard-layout"
+import { isRussianWord } from "../../src/util/russian-dictionary"
 
 describe("util.layout", () => {
   test("converts Latin word to Cyrillic", () => {
@@ -61,15 +62,24 @@ describe("util.layout", () => {
 
   test("findLayoutIssues converts words with mapped punctuation at boundaries", () => {
     expect(findLayoutIssues("[jhjij")?.corrected).toBe("хорошо")
-    expect(findLayoutIssues("Ghbdtn]")?.corrected).toBe("Приветъ")
     expect(findLayoutIssues(";bpym")?.corrected).toBe("жизнь")
     expect(findLayoutIssues("'nj")?.corrected).toBe("это")
     expect(findLayoutIssues(",snm")?.corrected).toBe("быть")
+    expect(findLayoutIssues("Ghbdtn]")).toBeUndefined()
   })
 
   test("findLayoutIssues converts consecutive mapped punctuation", () => {
     expect(findLayoutIssues("j,]`v")?.corrected).toBe("объём")
     expect(findLayoutIssues("dth,k.l")?.corrected).toBe("верблюд")
+  })
+
+  test("findLayoutIssues leaves product names alone when a Russian dictionary is available", () => {
+    if (isRussianWord("тест") === undefined) return
+    for (const name of ["Google", "opencode", "LibreOffice", "Docker", "Python", "GitHub", "Kubernetes"]) {
+      expect(findLayoutIssues(name)).toBeUndefined()
+    }
+    expect(findLayoutIssues("Ghbdtn")?.corrected).toBe("Привет")
+    expect(findLayoutIssues("Ghbdtnf")?.corrected).toBe("Привета")
   })
 
   test("findLayoutIssues returns undefined when nothing changes", () => {

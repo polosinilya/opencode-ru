@@ -9,6 +9,7 @@
  */
 
 import { isKnownWord } from "./layout-dictionary"
+import { isRussianWord } from "./russian-dictionary"
 
 const LAT_TO_CYR: Record<string, string> = {
   q: "й",
@@ -144,6 +145,7 @@ export function findLayoutIssues(text: string): LayoutIssues | undefined {
       if (known) return word
       const fixed = convertWord(word)
       if (fixed === word) return word
+      if (isRussianWord(fixed) === false) return word
       changed.push(word)
       return fixed
     }
