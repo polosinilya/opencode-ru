@@ -16,4 +16,11 @@ describe("util.docx", () => {
     const text = new TextDecoder().decode(buildDocx("a < b & c > d"))
     expect(text).toContain("a &lt; b &amp; c &gt; d")
   })
+
+  test("renders markdown tables as word tables", () => {
+    const text = new TextDecoder().decode(buildDocx("| A | B |\n|---|---|\n| 1 | 2 |\n"))
+    expect(text).toContain("<w:tbl>")
+    expect(text).toContain("<w:tr>")
+    expect(text).toContain("<w:tc>")
+  })
 })

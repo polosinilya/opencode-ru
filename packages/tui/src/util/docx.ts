@@ -147,8 +147,29 @@ function paragraph(runs: Run[], options?: { style?: string; spacing?: number; sh
   return `<w:p>${head}${runs.map(runXml).join("")}</w:p>`
 }
 
-const HEADINGS: Record<number, { size: number; spacing: number }> = {
-  1: { size: 36, spacing: 240 },
+const TABLE_BORDERS = ["top", "left", "bottom", "right", "insideH", "insideV"]
+  .map((side) => `<w:${side} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`)
+  .join("")
+
+function tableXml(rows: string[][]) {
+  const grid = `<w:tblGrid>${rows[0].map(() => `<w:gridCol w:w="3000"/>`).join("")}</w:tblGrid>`
+  const trs = rows
+    .map(
+      (cells, rowIndex) =>
+        `<w:tr>${cells
+          .map(
+            (cell) =>
+              `<w:tc><w:tcPr><w:tcW w:w="0" w:type="auto"/></w:tcPr>${paragraph(
+                inlineRuns(cell).map((run) => (rowIndex === 0 ? { ...run, bold: true } : run)),
+              )}</w:tc>`,
+          )
+          .join("")}</w:tr>`,
+    )
+    .join("")
+  return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders>${TABLE_BORDERS}</w:tblBorders></w:tblPr>${grid}${trs}</w:tbl>`
+}
+
+const HEADINGS: Record<number, { size: number; spacing: number }> = {  1: { size: 36, spacing: 240 },
   2: { size: 30, spacing: 200 },
   3: { size: 26, spacing: 160 },
   4: { size: 24, spacing: 140 },
@@ -183,6 +204,25 @@ function renderMarkdown(markdown: string): string {
       for (const codeLine of code.length ? code : [""]) {
         body.push(paragraph([{ text: codeLine || " ", code: true }], { shading: "F5F5F5" }))
       }
+      continue
+    }
+
+    if (line.trim().startsWith("|") && /^\s*\|?[\s:|-]+\|/.test(lines[index + 1] ?? "")) {
+      flush()
+      const cells = (row: string) =>
+        row
+          .trim()
+          .replace(/^\|/, "")
+          .replace(/\|$/, "")
+          .split("|")
+          .map((cell) => cell.trim())
+      const rows: string[][] = [cells(line)]
+      index += 2
+      while (index < lines.length && lines[index].trim().startsWith("|")) {
+        rows.push(cells(lines[index]))
+        index++
+      }
+      body.push(tableXml(rows))
       continue
     }
 
