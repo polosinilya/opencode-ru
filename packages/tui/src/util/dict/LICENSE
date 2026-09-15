@@ -1,0 +1,9 @@
+Russian dictionary for the bundled hunspell engine.
+
+Files: ru_RU.aff, ru_RU.dic
+Source: LibreOffice dictionaries (libreoffice-dictionaries), package "hunspell-ru"
+Copyright: The LibreOffice Project
+License: MPL-2.0 (https://www.mozilla.org/MPL/2.0/)
+
+The files are redistributed unchanged. Full copyright information is available in
+the "hunspell-ru" package (Debian: /usr/share/doc/hunspell-ru/copyright).
