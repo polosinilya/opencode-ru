@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { convertText, convertWord, findLayoutIssues, fixLastWord } from "../../src/util/keyboard-layout"
-import { isRussianWord } from "../../src/util/russian-dictionary"
+import { isRussianWord } from "../../src/util/hunspell"
 
 describe("util.layout", () => {
   test("converts Latin word to Cyrillic", () => {

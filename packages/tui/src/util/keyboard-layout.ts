@@ -9,7 +9,7 @@
  */
 
 import { isKnownWord } from "./layout-dictionary"
-import { isRussianWord } from "./russian-dictionary"
+import { isRussianWord } from "./hunspell"
 
 const LAT_TO_CYR: Record<string, string> = {
   q: "й",
