@@ -3,7 +3,9 @@
  *
  * Produces a valid OOXML package (stored ZIP) that opens in Word, LibreOffice
  * and OpenOffice without any external tools. Supports the Markdown subset used
- * by the transcript plus the common formatting found in assistant answers.
+ * by the transcript plus the common formatting found in assistant answers:
+ * headings, bold/italic/inline code, code blocks, bullet/numbered lists,
+ * tables and clickable hyperlinks.
  */
 
 const encoder = new TextEncoder()
@@ -36,15 +38,10 @@ function zip(entries: { name: string; data: Uint8Array }[]) {
     const lv = new DataView(local.buffer)
     lv.setUint32(0, 0x04034b50, true)
     lv.setUint16(4, 20, true)
-    lv.setUint16(6, 0, true)
-    lv.setUint16(8, 0, true)
-    lv.setUint16(10, 0, true)
-    lv.setUint16(12, 0, true)
     lv.setUint32(14, crc, true)
     lv.setUint32(18, size, true)
     lv.setUint32(22, size, true)
     lv.setUint16(26, name.length, true)
-    lv.setUint16(28, 0, true)
     local.set(name, 30)
     chunks.push(local, entry.data)
 
@@ -53,19 +50,10 @@ function zip(entries: { name: string; data: Uint8Array }[]) {
     cv.setUint32(0, 0x02014b50, true)
     cv.setUint16(4, 20, true)
     cv.setUint16(6, 20, true)
-    cv.setUint16(8, 0, true)
-    cv.setUint16(10, 0, true)
-    cv.setUint16(12, 0, true)
-    cv.setUint16(14, 0, true)
     cv.setUint32(16, crc, true)
     cv.setUint32(20, size, true)
     cv.setUint32(24, size, true)
     cv.setUint16(28, name.length, true)
-    cv.setUint16(30, 0, true)
-    cv.setUint16(32, 0, true)
-    cv.setUint16(34, 0, true)
-    cv.setUint16(36, 0, true)
-    cv.setUint32(38, 0, true)
     cv.setUint32(42, offset, true)
     cd.set(name, 46)
     central.push(cd)
@@ -84,15 +72,10 @@ function zip(entries: { name: string; data: Uint8Array }[]) {
   const total = chunks.reduce((sum, c) => sum + c.length, 0) + centralSize + end.length
   const out = new Uint8Array(total)
   let pos = 0
-  for (const chunk of chunks) {
+  for (const chunk of [...chunks, ...central, end]) {
     out.set(chunk, pos)
     pos += chunk.length
   }
-  for (const chunk of central) {
-    out.set(chunk, pos)
-    pos += chunk.length
-  }
-  out.set(end, pos)
   return out
 }
 
@@ -105,7 +88,17 @@ function escapeXml(text: string) {
     .replace(/"/g, "&quot;")
 }
 
-type Run = { text: string; bold?: boolean; italic?: boolean; code?: boolean }
+type Run = { text: string; bold?: boolean; italic?: boolean; code?: boolean; link?: string }
+
+type LinkMap = Map<string, string>
+
+function linkId(links: LinkMap, url: string) {
+  const existing = links.get(url)
+  if (existing) return existing
+  const id = `rIdLink${links.size + 1}`
+  links.set(url, id)
+  return id
+}
 
 function inlineRuns(text: string): Run[] {
   const runs: Run[] = []
@@ -120,7 +113,7 @@ function inlineRuns(text: string): Run[] {
     else if (token.startsWith("[")) {
       const label = token.slice(1, token.indexOf("]"))
       const url = token.slice(token.indexOf("(") + 1, -1)
-      runs.push({ text: url === label ? label : `${label} (${url})` })
+      runs.push({ text: label || url, link: url })
     } else runs.push({ text: token.slice(1, -1), italic: true })
     last = index + token.length
   }
@@ -128,30 +121,33 @@ function inlineRuns(text: string): Run[] {
   return runs
 }
 
-function runXml(run: Run) {
+function runXml(run: Run, links: LinkMap) {
   if (!run.text) return ""
   const props: string[] = []
   if (run.bold) props.push("<w:b/>")
   if (run.italic) props.push("<w:i/>")
   if (run.code) props.push('<w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/>')
+  if (run.link) props.push('<w:color w:val="0563C1"/><w:u w:val="single"/>')
   const rpr = props.length ? `<w:rPr>${props.join("")}</w:rPr>` : ""
-  return `<w:r>${rpr}<w:t xml:space="preserve">${escapeXml(run.text)}</w:t></w:r>`
+  const text = `<w:r>${rpr}<w:t xml:space="preserve">${escapeXml(run.text)}</w:t></w:r>`
+  if (run.link) return `<w:hyperlink r:id="${linkId(links, run.link)}">${text}</w:hyperlink>`
+  return text
 }
 
-function paragraph(runs: Run[], options?: { style?: string; spacing?: number; shading?: string }) {
+function paragraph(runs: Run[], options: { numId?: number; spacing?: number; shading?: string } | undefined, links: LinkMap) {
   const ppr: string[] = []
-  if (options?.style) ppr.push(`<w:pStyle w:val="${options.style}"/>`)
+  if (options?.numId) ppr.push(`<w:numPr><w:ilvl w:val="0"/><w:numId w:val="${options.numId}"/></w:numPr>`)
   if (options?.shading) ppr.push(`<w:shd w:val="clear" w:fill="${options.shading}"/>`)
   if (options?.spacing) ppr.push(`<w:spacing w:before="${options.spacing}" w:after="${options.spacing}"/>`)
   const head = ppr.length ? `<w:pPr>${ppr.join("")}</w:pPr>` : ""
-  return `<w:p>${head}${runs.map(runXml).join("")}</w:p>`
+  return `<w:p>${head}${runs.map((run) => runXml(run, links)).join("")}</w:p>`
 }
 
 const TABLE_BORDERS = ["top", "left", "bottom", "right", "insideH", "insideV"]
   .map((side) => `<w:${side} w:val="single" w:sz="4" w:space="0" w:color="999999"/>`)
   .join("")
 
-function tableXml(rows: string[][]) {
+function tableXml(rows: string[][], links: LinkMap) {
   const grid = `<w:tblGrid>${rows[0].map(() => `<w:gridCol w:w="3000"/>`).join("")}</w:tblGrid>`
   const trs = rows
     .map(
@@ -161,6 +157,8 @@ function tableXml(rows: string[][]) {
             (cell) =>
               `<w:tc><w:tcPr><w:tcW w:w="0" w:type="auto"/></w:tcPr>${paragraph(
                 inlineRuns(cell).map((run) => (rowIndex === 0 ? { ...run, bold: true } : run)),
+                undefined,
+                links,
               )}</w:tc>`,
           )
           .join("")}</w:tr>`,
@@ -169,7 +167,8 @@ function tableXml(rows: string[][]) {
   return `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders>${TABLE_BORDERS}</w:tblBorders></w:tblPr>${grid}${trs}</w:tbl>`
 }
 
-const HEADINGS: Record<number, { size: number; spacing: number }> = {  1: { size: 36, spacing: 240 },
+const HEADINGS: Record<number, { size: number; spacing: number }> = {
+  1: { size: 36, spacing: 240 },
   2: { size: 30, spacing: 200 },
   3: { size: 26, spacing: 160 },
   4: { size: 24, spacing: 140 },
@@ -177,7 +176,7 @@ const HEADINGS: Record<number, { size: number; spacing: number }> = {  1: { size
   6: { size: 22, spacing: 120 },
 }
 
-function renderMarkdown(markdown: string): string {
+function renderMarkdown(markdown: string, links: LinkMap): string {
   const body: string[] = []
   const lines = markdown.replace(/\r\n?/g, "\n").split("\n")
   let index = 0
@@ -185,7 +184,7 @@ function renderMarkdown(markdown: string): string {
 
   const flush = () => {
     if (!paragraphLines.length) return
-    body.push(paragraph(inlineRuns(paragraphLines.join(" "))))
+    body.push(paragraph(inlineRuns(paragraphLines.join(" ")), undefined, links))
     paragraphLines = []
   }
 
@@ -202,7 +201,7 @@ function renderMarkdown(markdown: string): string {
       }
       index++
       for (const codeLine of code.length ? code : [""]) {
-        body.push(paragraph([{ text: codeLine || " ", code: true }], { shading: "F5F5F5" }))
+        body.push(paragraph([{ text: codeLine || " ", code: true }], { shading: "F5F5F5" }, links))
       }
       continue
     }
@@ -222,33 +221,32 @@ function renderMarkdown(markdown: string): string {
         rows.push(cells(lines[index]))
         index++
       }
-      body.push(tableXml(rows))
+      body.push(tableXml(rows, links))
       continue
     }
 
     const heading = line.match(/^(#{1,6})\s+(.*)$/)
     if (heading) {
       flush()
-      const level = heading[1].length
-      const spec = HEADINGS[level]
+      const spec = HEADINGS[heading[1].length]
       const runs = inlineRuns(heading[2]).map((run) => ({ ...run, bold: true }))
-      body.push(paragraph(runs, { spacing: spec.spacing }))
+      body.push(paragraph(runs, { spacing: spec.spacing }, links))
       index++
       continue
     }
 
     if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
       flush()
-      body.push(paragraph([{ text: "" }]))
+      body.push(paragraph([{ text: "" }], undefined, links))
       index++
       continue
     }
 
-    const list = line.match(/^\s*([-*+]|\d+\.)\s+(.*)$/)
+    const list = line.match(/^(\s*)([-*+]|\d+\.)\s+(.*)$/)
     if (list) {
       flush()
-      const ordered = /\d/.test(list[1])
-      body.push(paragraph([{ text: `${ordered ? list[1] : "•"} ` }, ...inlineRuns(list[2])]))
+      const ordered = /\d/.test(list[2])
+      body.push(paragraph(inlineRuns(list[3]), { numId: ordered ? 2 : 1 }, links))
       index++
       continue
     }
@@ -256,7 +254,7 @@ function renderMarkdown(markdown: string): string {
     const quote = line.match(/^>\s?(.*)$/)
     if (quote) {
       flush()
-      body.push(paragraph(inlineRuns(quote[1]).map((run) => ({ ...run, italic: true }))))
+      body.push(paragraph(inlineRuns(quote[1]).map((run) => ({ ...run, italic: true })), undefined, links))
       index++
       continue
     }
@@ -275,17 +273,35 @@ function renderMarkdown(markdown: string): string {
 }
 
 const CONTENT_TYPES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>`
 
-const RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+const PACKAGE_RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`
 
+const NUMBERING = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr><w:rPr><w:rFonts w:ascii="Symbol" w:hAnsi="Symbol" w:hint="default"/></w:rPr></w:lvl></w:abstractNum><w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num><w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num></w:numbering>`
+
+function documentRels(links: LinkMap) {
+  const hyperlinks = [...links.entries()]
+    .map(
+      ([url, id]) =>
+        `<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${escapeXml(url)}" TargetMode="External"/>`,
+    )
+    .join("")
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>${hyperlinks}</Relationships>`
+}
+
 export function buildDocx(markdown: string): Uint8Array {
+  const links: LinkMap = new Map()
+  const body = renderMarkdown(markdown, links)
   const document = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${renderMarkdown(markdown)}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>`
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>`
   return zip([
     { name: "[Content_Types].xml", data: encoder.encode(CONTENT_TYPES) },
-    { name: "_rels/.rels", data: encoder.encode(RELS) },
+    { name: "_rels/.rels", data: encoder.encode(PACKAGE_RELS) },
     { name: "word/document.xml", data: encoder.encode(document) },
+    { name: "word/_rels/document.xml.rels", data: encoder.encode(documentRels(links)) },
+    { name: "word/numbering.xml", data: encoder.encode(NUMBERING) },
   ])
 }

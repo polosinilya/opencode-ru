@@ -23,4 +23,12 @@ describe("util.docx", () => {
     expect(text).toContain("<w:tr>")
     expect(text).toContain("<w:tc>")
   })
+
+  test("renders lists with numbering and links as hyperlinks", () => {
+    const text = new TextDecoder().decode(buildDocx("1. one\n\n- two\n\n[x](https://a.b)\n"))
+    expect(text).toContain("<w:numPr>")
+    expect(text).toContain("<w:hyperlink")
+    expect(text).toContain("word/numbering.xml")
+    expect(text).toContain('Target="https://a.b"')
+  })
 })
