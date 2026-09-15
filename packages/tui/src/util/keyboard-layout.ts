@@ -53,8 +53,8 @@ const CYR_TO_LAT: Record<string, string> = Object.fromEntries(
 
 const LATIN = /[a-z]/i
 const CYRILLIC = /[а-яё]/i
-const WORD = /[\[\];',.\/`]?[a-zа-яё]+(?:[\[\];',.\/`][a-zа-яё]+)*[\[\]]?/gi
-const LAST_WORD = /[\[\];',.\/`]?[a-zа-яё]+(?:[\[\];',.\/`][a-zа-яё]+)*[\[\]]?$/i
+const WORD = /[\[\];',.\/`]*[a-zа-яё]+(?:[\[\];',.\/`]+[a-zа-яё]+)*[\[\]]?/gi
+const LAST_WORD = /[\[\];',.\/`]*[a-zа-яё]+(?:[\[\];',.\/`]+[a-zа-яё]+)*[\[\]]?$/i
 
 function mapChar(char: string, map: Record<string, string>) {
   const mapped = map[char.toLowerCase()]

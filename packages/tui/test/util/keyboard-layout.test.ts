@@ -67,6 +67,11 @@ describe("util.layout", () => {
     expect(findLayoutIssues(",snm")?.corrected).toBe("быть")
   })
 
+  test("findLayoutIssues converts consecutive mapped punctuation", () => {
+    expect(findLayoutIssues("j,]`v")?.corrected).toBe("объём")
+    expect(findLayoutIssues("dth,k.l")?.corrected).toBe("верблюд")
+  })
+
   test("findLayoutIssues returns undefined when nothing changes", () => {
     expect(findLayoutIssues("")).toBeUndefined()
   })
