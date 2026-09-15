@@ -13,12 +13,14 @@ export type DialogExportOptionsProps = {
   defaultToolDetails: boolean
   defaultAssistantMetadata: boolean
   defaultOpenWithoutSaving: boolean
+  defaultFormat: "md" | "docx"
   onConfirm?: (options: {
     filename: string
     thinking: boolean
     toolDetails: boolean
     assistantMetadata: boolean
     openWithoutSaving: boolean
+    format: "md" | "docx"
   }) => void
   onCancel?: () => void
 }
@@ -33,7 +35,14 @@ export function DialogExportOptions(props: DialogExportOptionsProps) {
     toolDetails: props.defaultToolDetails,
     assistantMetadata: props.defaultAssistantMetadata,
     openWithoutSaving: props.defaultOpenWithoutSaving,
-    active: "filename" as "filename" | "thinking" | "toolDetails" | "assistantMetadata" | "openWithoutSaving",
+    format: props.defaultFormat,
+    active: "filename" as
+      | "filename"
+      | "format"
+      | "thinking"
+      | "toolDetails"
+      | "assistantMetadata"
+      | "openWithoutSaving",
   })
 
   useBindings(() => ({
@@ -43,13 +52,9 @@ export function DialogExportOptions(props: DialogExportOptionsProps) {
         desc: t("Next export option"),
         group: t("Dialog"),
         cmd: () => {
-          const order: Array<"filename" | "thinking" | "toolDetails" | "assistantMetadata" | "openWithoutSaving"> = [
-            "filename",
-            "thinking",
-            "toolDetails",
-            "assistantMetadata",
-            "openWithoutSaving",
-          ]
+          const order: Array<
+            "filename" | "format" | "thinking" | "toolDetails" | "assistantMetadata" | "openWithoutSaving"
+          > = ["filename", "format", "thinking", "toolDetails", "assistantMetadata", "openWithoutSaving"]
           const currentIndex = order.indexOf(store.active)
           const nextIndex = (currentIndex + 1) % order.length
           setStore("active", order[nextIndex])
@@ -66,6 +71,7 @@ export function DialogExportOptions(props: DialogExportOptionsProps) {
         desc: t("Toggle export option"),
         group: t("Dialog"),
         cmd: () => {
+          if (store.active === "format") setStore("format", store.format === "md" ? "docx" : "md")
           if (store.active === "thinking") setStore("thinking", !store.thinking)
           if (store.active === "toolDetails") setStore("toolDetails", !store.toolDetails)
           if (store.active === "assistantMetadata") setStore("assistantMetadata", !store.assistantMetadata)
@@ -106,6 +112,7 @@ export function DialogExportOptions(props: DialogExportOptionsProps) {
               toolDetails: store.toolDetails,
               assistantMetadata: store.assistantMetadata,
               openWithoutSaving: store.openWithoutSaving,
+              format: store.format,
             })
           }}
           height={3}
@@ -123,6 +130,18 @@ export function DialogExportOptions(props: DialogExportOptionsProps) {
         />
       </box>
       <box flexDirection="column">
+        <box
+          flexDirection="row"
+          gap={2}
+          paddingLeft={1}
+          backgroundColor={store.active === "format" ? theme.backgroundElement : undefined}
+          onMouseUp={() => setStore("active", "format")}
+        >
+          <text fg={store.active === "format" ? theme.primary : theme.textMuted}>{t("Format:")}</text>
+          <text fg={store.active === "format" ? theme.primary : theme.text}>
+            {store.format === "docx" ? "DOCX" : "Markdown"}
+          </text>
+        </box>
         <box
           flexDirection="row"
           gap={2}
@@ -197,6 +216,7 @@ DialogExportOptions.show = (
   defaultToolDetails: boolean,
   defaultAssistantMetadata: boolean,
   defaultOpenWithoutSaving: boolean,
+  defaultFormat: "md" | "docx",
 ) => {
   return new Promise<{
     filename: string
@@ -204,6 +224,7 @@ DialogExportOptions.show = (
     toolDetails: boolean
     assistantMetadata: boolean
     openWithoutSaving: boolean
+    format: "md" | "docx"
   } | null>((resolve) => {
     dialog.replace(
       () => (
@@ -213,6 +234,7 @@ DialogExportOptions.show = (
           defaultToolDetails={defaultToolDetails}
           defaultAssistantMetadata={defaultAssistantMetadata}
           defaultOpenWithoutSaving={defaultOpenWithoutSaving}
+          defaultFormat={defaultFormat}
           onConfirm={(options) => resolve(options)}
           onCancel={() => resolve(null)}
         />

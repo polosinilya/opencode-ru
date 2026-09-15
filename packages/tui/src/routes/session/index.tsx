@@ -69,6 +69,7 @@ import { QuestionPrompt } from "./question"
 import { DialogExportOptions } from "../../ui/dialog-export-options"
 import * as Model from "../../util/model"
 import { formatTranscript } from "../../util/transcript"
+import { buildDocx } from "../../util/docx"
 import { sessionEpilogue } from "../../util/presentation"
 import { setPreLayoutSiblingMargin } from "../../util/layout"
 import { useTuiConfig } from "../../config"
@@ -178,7 +179,7 @@ function use() {
 export function Session() {
   const setEpilogue = useEpilogue()
   const clipboard = useClipboard()
-  const writeExport = async (file: string, content: string) => {
+  const writeExport = async (file: string, content: string | Uint8Array) => {
     await mkdir(path.dirname(file), { recursive: true })
     await writeFile(file, content)
   }
@@ -966,6 +967,7 @@ export function Session() {
             showDetails(),
             showAssistantMetadata(),
             false,
+            "md",
           )
 
           if (options === null) return
@@ -981,34 +983,31 @@ export function Session() {
             },
           )
 
-          if (options.openWithoutSaving) {
+          const editorCwd =
+            (project.instance.path().worktree === "/" ? undefined : project.instance.path().worktree) ||
+            project.instance.directory() ||
+            paths.cwd
+
+          if (options.openWithoutSaving && options.format === "md") {
             // Just open in editor without saving
-            await openEditor({
-              renderer,
-              value: transcript,
-              cwd:
-                (project.instance.path().worktree === "/" ? undefined : project.instance.path().worktree) ||
-                project.instance.directory() ||
-                paths.cwd,
-            })
+            await openEditor({ renderer, value: transcript, cwd: editorCwd })
           } else {
-            const exportDir = paths.cwd
-            const filename = options.filename.trim()
-            const filepath = path.join(exportDir, filename)
+            const filename =
+              options.format === "docx"
+                ? `${options.filename.trim().replace(/\.(md|markdown|txt|docx)$/i, "")}.docx`
+                : options.filename.trim()
+            const filepath = path.join(paths.cwd, filename)
 
-            await writeExport(filepath, transcript)
+            if (options.format === "docx") {
+              await writeExport(filepath, buildDocx(transcript))
+            } else {
+              await writeExport(filepath, transcript)
 
-            // Open with EDITOR if available
-            const result = await openEditor({
-              renderer,
-              value: transcript,
-              cwd:
-                (project.instance.path().worktree === "/" ? undefined : project.instance.path().worktree) ||
-                project.instance.directory() ||
-                paths.cwd,
-            })
-            if (result !== undefined) {
-              await writeExport(filepath, result)
+              // Open with EDITOR if available
+              const result = await openEditor({ renderer, value: transcript, cwd: editorCwd })
+              if (result !== undefined) {
+                await writeExport(filepath, result)
+              }
             }
 
             toast.show({ message: t("Session exported to {filename}", { filename }), variant: "success" })
