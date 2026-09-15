@@ -6,6 +6,19 @@
 
 ---
 
+## Скачать
+
+**Последняя версия: [ru.0008](https://github.com/polosinilya/opencode-ru/releases/tag/v1.18.31-ru.0008)**
+
+| ОС | Файл |
+|---|---|
+| Linux (deb, amd64) | `opencode_1.18.31-ru15_amd64.deb` |
+| Windows | `opencode-ru-setup.exe` |
+
+Все сборки: [Releases](https://github.com/polosinilya/opencode-ru/releases) · [Wiki со списком по порядку](https://github.com/polosinilya/opencode-ru/wiki)
+
+---
+
 ## Что добавлено к оригиналу
 
 - **Русский интерфейс** — TUI и CLI локализованы: меню, диалоги, подсказки, описания команд, слэш-команды.
@@ -23,7 +36,7 @@
 
 ### Linux (deb, amd64)
 ```bash
-sudo dpkg -i opencode_1.18.30-ru6_amd64.deb
+sudo dpkg -i opencode_1.18.31-ru15_amd64.deb
 opencode --version
 ```
 
