@@ -88,9 +88,9 @@ describe("transcript", () => {
       expect(result).toBe("## Assistant (Build · Claude Sonnet 4 · 5.4s)\n\n")
     })
 
-    test("excludes metadata when disabled", () => {
+    test("keeps the agent name when metadata is disabled", () => {
       const result = formatAssistantHeader(baseMsg, false)
-      expect(result).toBe("## Assistant\n\n")
+      expect(result).toBe("## Assistant (Build)\n\n")
     })
 
     test("handles missing completed time", () => {
@@ -228,9 +228,7 @@ describe("transcript", () => {
         },
       }
       const result = formatPart(part, { ...options, toolDetails: false })
-      expect(result).toContain("**Tool: bash**")
-      expect(result).not.toContain("**Input:**")
-      expect(result).not.toContain("**Output:**")
+      expect(result).toBe("")
     })
 
     test("formats tool error", () => {
@@ -441,8 +439,7 @@ describe("transcript", () => {
 
       const result = formatTranscript(session, messages, options)
 
-      expect(result).toContain("## Assistant\n\n")
-      expect(result).not.toContain("Build")
+      expect(result).toContain("## Assistant (Build)\n\n")
       expect(result).not.toContain("claude-sonnet-4-20250514")
     })
   })

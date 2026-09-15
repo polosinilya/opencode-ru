@@ -72,7 +72,7 @@ export function formatAssistantHeader(
   providers?: Provider[] | ReadonlyMap<string, Provider>,
 ): string {
   if (!includeMetadata) {
-    return `## Assistant\n\n`
+    return `## Assistant (${Locale.titlecase(msg.agent)})\n\n`
   }
 
   const duration =
@@ -96,14 +96,15 @@ export function formatPart(part: Part, options: TranscriptOptions): string {
   }
 
   if (part.type === "tool") {
+    if (!options.toolDetails) return ""
     let result = `**Tool: ${part.tool}**\n`
-    if (options.toolDetails && part.state.input) {
+    if (part.state.input) {
       result += `\n**Input:**\n\`\`\`json\n${JSON.stringify(part.state.input, null, 2)}\n\`\`\`\n`
     }
-    if (options.toolDetails && part.state.status === "completed" && part.state.output) {
+    if (part.state.status === "completed" && part.state.output) {
       result += `\n**Output:**\n\`\`\`\n${part.state.output}\n\`\`\`\n`
     }
-    if (options.toolDetails && part.state.status === "error" && part.state.error) {
+    if (part.state.status === "error" && part.state.error) {
       result += `\n**Error:**\n\`\`\`\n${part.state.error}\n\`\`\`\n`
     }
     result += `\n`
