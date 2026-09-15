@@ -12,7 +12,7 @@
 
 | ОС | Файл |
 |---|---|
-| Linux (deb, amd64) | `opencode_1.18.31-ru15_amd64.deb` |
+| Linux (deb, amd64) | `opencode_1.18.31-ru.0008_amd64.deb` |
 | Windows | `opencode-ru-setup.exe` |
 
 Все сборки: [Releases](https://github.com/polosinilya/opencode-ru/releases) · [Wiki со списком по порядку](https://github.com/polosinilya/opencode-ru/wiki)
@@ -36,7 +36,7 @@
 
 ### Linux (deb, amd64)
 ```bash
-sudo dpkg -i opencode_1.18.31-ru15_amd64.deb
+sudo dpkg -i opencode_1.18.31-ru.0008_amd64.deb
 opencode --version
 ```
 
